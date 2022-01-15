@@ -28,12 +28,15 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", privileged: false, inline: <<-SHELL
     set -euxo pipefail
 
+    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - 
+	sudo sh -c 'echo "deb https://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list'
+
     APT_GET='sudo DEBIAN_FRONTEND=noninteractive apt-get'
 
     # Upgrade system
     $APT_GET update
     $APT_GET dist-upgrade -y
-    $APT_GET install git -y
+    $APT_GET install git google-chrome-stable -y
     $APT_GET autoremove -y
     sudo snap refresh
 
@@ -43,6 +46,10 @@ Vagrant.configure("2") do |config|
     # Set git name
     git config --global user.name "Guillem Mercadal"
     git config --global user.email guillem.mercadal@gmail.com
+
+    # Retrieve configs
+    ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+    git clone git@github.com:akustik/configurations.git
     
   SHELL
 end
