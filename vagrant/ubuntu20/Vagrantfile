@@ -54,7 +54,10 @@ Vagrant.configure("2") do |config|
     git config --global user.name "Guillem Mercadal"
     git config --global user.email guillem.mercadal@gmail.com
     ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
-    git clone git@github.com:akustik/configurations.git
+    rm -fR configurations && git clone git@github.com:akustik/configurations.git
+
+    # Shared folder permissions
+    sudo chown -R vagrant:vagrant /home/vagrant/data
     
   SHELL
 end
