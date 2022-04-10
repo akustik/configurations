@@ -1,0 +1,66 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "peru/ubuntu-20.04-desktop-amd64"
+  config.vm.box_version = "20220402.01"
+  config.vm.synced_folder "data", "/home/vagrant/data", create: true,
+  	owner: "vagrant", group: "vagrant"
+
+  config.vm.provider :virtualbox do |vb|
+    vb.name = "ubuntu20dev"
+  end
+
+  # Workaround to forward ssh key from Windows Host with Git Bash
+  if Vagrant::Util::Platform.windows?
+    if File.exists?(File.join(Dir.home, ".ssh", "id_rsa"))
+        # Read local machine's SSH Key (~/.ssh/id_rsa)
+        ssh_key = File.read(File.join(Dir.home, ".ssh", "id_rsa"))
+        # Copy it to VM as the /vagrant/.ssh/id_rsa key
+        config.vm.provision :shell, privileged: false, :inline => "echo 'Windows-specific: Copying local SSH Key to VM for provisioning...' && mkdir -p /home/vagrant/.ssh && echo '#{ssh_key}' > /home/vagrant/.ssh/id_rsa && chmod 600 /home/vagrant/.ssh/id_rsa", run: "always"
+    else
+        # Else, throw a Vagrant Error. Cannot successfully startup on Windows without a SSH Key!
+        raise Vagrant::Errors::VagrantError, "\n\nERROR: SSH Key not found at ~/.ssh/id_rsa.\nYou can generate this key manually by running `ssh-keygen` in Git Bash.\n\n"
+    end
+  end
+
+  # Run a shell script in first run
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+    set -euxo pipefail
+
+    APT_GET='sudo DEBIAN_FRONTEND=noninteractive apt-get'
+
+    # Upgrade system
+    $APT_GET update
+    $APT_GET dist-upgrade -y
+    $APT_GET install git apt-transport-https ca-certificates curl software-properties-common -y
+    $APT_GET autoremove -y
+    sudo snap refresh
+
+    # Set keyboard layout
+    gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'es')]"
+
+    # Set up git & configurations
+    git config --global user.name "Guillem Mercadal"
+    git config --global user.email guillem.mercadal@gmail.com
+    ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+    rm -fR configurations && git clone git@github.com:akustik/configurations.git
+
+    # Shared folder permissions
+    sudo chown -R vagrant:vagrant /home/vagrant/data
+
+    # Install external repos
+    curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+    sudo add-apt-repository "deb https://dl.google.com/linux/chrome/deb/ stable main"
+
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
+
+    sudo $APT_GET install google-chrome-stable docker-ce docker-compose
+    sudo usermod -aG docker vagrant
+
+    # Set favorite apps
+    gsettings set org.gnome.shell favorite-apps "['firefox.desktop', 'google-chrome.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop']"
+    
+  SHELL
+end
