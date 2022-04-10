@@ -58,6 +58,7 @@ Vagrant.configure("2") do |config|
 
     sudo $APT_GET install google-chrome-stable docker-ce docker-compose -y
     sudo usermod -aG docker vagrant
+    sudo usermod -aG vboxsf vagrant
 
     # Set favorite apps
     gsettings set org.gnome.shell favorite-apps "['firefox.desktop', 'google-chrome.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop']"
