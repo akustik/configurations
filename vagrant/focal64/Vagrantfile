@@ -30,6 +30,16 @@ Vagrant.configure("2") do |config|
   # Add Google Chrome
   config.vm.provision :shell, inline: "sudo apt install -y google-chrome-stable"
 
+  # Add VLC & transmission
+  config.vm.provision :shell, inline: "sudo snap install vlc"
+  config.vm.provision :shell, inline: "sudo apt install -y transmission"
+
+  # Set keyboard layout
+  config.vm.provision :shell, inline: "gsettings set org.gnome.desktop.input-sources sources \"[('xkb', 'es')]\""
+
+  # Set favorite apps
+  config.vm.provision :shell, inline: "gsettings set org.gnome.shell favorite-apps \"['google-chrome.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop', 'vlc_vlc.desktop', 'transmission-gtk.desktop']\""
+
   # Restart
   config.vm.provision :shell, inline: "sudo shutdown -r now"
 end
