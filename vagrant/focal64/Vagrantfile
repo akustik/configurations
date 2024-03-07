@@ -7,39 +7,43 @@ Vagrant.configure("2") do |config|
     v.memory = 2048
   end
 
-  # Currently "ubuntu/bionic64" on VirtualBox requires `type: "virtualbox"`
-  # to make synced folder works.
-  config.vm.synced_folder ".", "/vagrant", type: "virtualbox"
+  config.vm.synced_folder "data", "/home/vagrant/data", create: true, owner: "vagrant", group: "vagrant"
 
-  # Add Google Chrome repository
-  config.vm.provision :shell, inline: "wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub|sudo apt-key add -"
-  config.vm.provision :shell, inline: "sudo sh -c 'echo \"deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main\" > /etc/apt/sources.list.d/google.list'"
+  config.vm.provision "bootstrap", type: "shell", inline: <<-SHELL
+    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub|sudo apt-key add -
+    sudo sh -c 'echo \"deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main\" > /etc/apt/sources.list.d/google.list'
 
-  # Update repositories
-  config.vm.provision :shell, inline: "sudo apt update -y"
+    sudo apt update -y
+    sudo apt upgrade -y
 
-  # Upgrade installed packages
-  config.vm.provision :shell, inline: "sudo apt upgrade -y"
+    sudo apt install -y --no-install-recommends ubuntu-desktop
+    
+    sudo apt install -y --no-install-recommends virtualbox-guest-dkms virtualbox-guest-utils virtualbox-guest-x11
+    
+    # Add `vagrant` to Administrator
+    sudo usermod -a -G sudo vagrant
+    
+    sudo apt install -y google-chrome-stable transmission
+    sudo snap install vlc
+  SHELL
 
-  # Add desktop environment
-  config.vm.provision :shell, inline: "sudo apt install -y --no-install-recommends ubuntu-desktop"
-  config.vm.provision :shell, inline: "sudo apt install -y --no-install-recommends virtualbox-guest-dkms virtualbox-guest-utils virtualbox-guest-x11"
-  # Add `vagrant` to Administrator
-  config.vm.provision :shell, inline: "sudo usermod -a -G sudo vagrant"
+  config.vm.provision "updates", type: "shell", run: "always", privileged: false, after: "bootstrap", inline: <<-SHELL
+    echo "## Configuring desktop ##"
+    gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'es')]"
+    gsettings set org.gnome.shell favorite-apps "['google-chrome.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop', 'vlc_vlc.desktop', 'transmission-gtk.desktop']"
+  
+    echo "## Updating packages ##"
+    sudo apt update -y
+    sudo apt upgrade -y
 
-  # Add Google Chrome
-  config.vm.provision :shell, inline: "sudo apt install -y google-chrome-stable"
+    echo "## Other stuff ##"
+    git config --global user.name "Guillem Mercadal"
+    git config --global user.email guillem.mercadal@gmail.com
+    
+    #sudo chown -R vagrant:vagrant /home/vagrant/data
 
-  # Add VLC & transmission
-  config.vm.provision :shell, inline: "sudo snap install vlc"
-  config.vm.provision :shell, inline: "sudo apt install -y transmission"
+  SHELL
 
-  # Set keyboard layout
-  config.vm.provision :shell, inline: "gsettings set org.gnome.desktop.input-sources sources \"[('xkb', 'es')]\""
+  config.vm.provision :shell, after: :all, inline: "sudo shutdown -r now"
 
-  # Set favorite apps
-  config.vm.provision :shell, inline: "gsettings set org.gnome.shell favorite-apps \"['google-chrome.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop', 'vlc_vlc.desktop', 'transmission-gtk.desktop']\""
-
-  # Restart
-  config.vm.provision :shell, inline: "sudo shutdown -r now"
 end
