@@ -43,6 +43,19 @@ def put(password, alg, rounds, key, value, input, output):
 
 @cli.command()
 @click.option('--password', type=str)
+@click.option('--new-password', type=str)
+@click.option('--rounds', type=int)
+@click.option('-a', '--alg', type=click.Choice(['AES', 'CHACHA']), default='CHACHA')
+@click.option('-o', '--output', default='-', type=str)
+@click.option('-i', '--input', default='-', type=str)
+def update(password, new_password, alg, rounds, input, output):
+    algorithm = _key_algorithm_for(alg, password, rounds or 0)
+    data = _load_data_from_input(algorithm, input)
+    new_algorithm = _key_algorithm_for(alg, new_password, rounds or 0)    
+    _dump_data_to_output(new_algorithm, output, data)
+
+@cli.command()
+@click.option('--password', type=str)
 @click.option('--rounds', type=int)
 @click.option('-a', '--alg', type=click.Choice(['AES', 'CHACHA']), default='CHACHA')
 @click.option('-p', '--pattern', required=True, type=str)

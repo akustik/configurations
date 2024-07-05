@@ -12,3 +12,6 @@ query:
 
 scan:
 	@echo "$(file < data)" | docker run -i -e WOLFY_SCAN_PASSWORD=${WOLFY_PASSWORD} wolfy:latest scan -i '-'
+
+update:
+	@echo "$(file < data)" | docker run -i -e WOLFY_UPDATE_PASSWORD=${WOLFY_PASSWORD} -e WOLFY_UPDATE_NEW_PASSWORD=${WOLFY_NEW_PASSWORD} wolfy:latest update -i '-' > updated
