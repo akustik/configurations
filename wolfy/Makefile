@@ -9,3 +9,6 @@ append:
 
 query:
 	@echo "$(file < data)" | docker run -i -e WOLFY_QUERY_PASSWORD=${WOLFY_PASSWORD} wolfy:latest query -p $(p) -i '-'
+
+scan:
+	@echo "$(file < data)" | docker run -i -e WOLFY_SCAN_PASSWORD=${WOLFY_PASSWORD} wolfy:latest scan -i '-'

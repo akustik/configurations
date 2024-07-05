@@ -54,6 +54,17 @@ def query(password, alg, rounds, pattern, input):
     for m in matches:
         click.echo(f'{m}')
 
+@cli.command()
+@click.option('--password', type=str)
+@click.option('--rounds', type=int)
+@click.option('-a', '--alg', type=click.Choice(['AES', 'CHACHA']), default='CHACHA')
+@click.option('-i', '--input', default='-', type=str)
+def scan(password, alg, rounds, input):
+    algorithm = _key_algorithm_for(alg, password, rounds or 0)
+    data = _load_data_from_input(algorithm, input)
+    for m in data:
+        click.echo(f'{m}')        
+
 
 def _load_data_from_input(algorithm, input):
     if not input:
